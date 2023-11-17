@@ -78,11 +78,12 @@ class Client:
         entry = tk.Entry(self.frame, width=30)
         entry.pack(pady=10)
         tk.Button(self.frame, text='Entrar', command=lambda: self.login(entry.get())).pack(side='bottom', pady=10)
+        entry.bind('<Return>', lambda event: self.login(entry.get()))
         entry.focus()
 
-    def login(self, name):
+    def login(self, name, event = None):
         if name:
-            self.name = name
+            self.name = name        
         else:
             return
         
@@ -164,15 +165,20 @@ class Client:
         tk.Label(window, text='Nome do destinatário:').pack()
         self.target_entry = tk.Entry(window, width=50)
         self.target_entry.pack()
-        tk.Label(window, text='Menssagem:').pack()
+        tk.Label(window, text='Mensagem:').pack()
         self.msg_entry = tk.Entry(window, width=50)
         self.msg_entry.pack()
-        tk.Button(window, text='Enviar', command=lambda: [self.send_message(), window.destroy()]).pack(side='bottom', pady=5)
+        tk.Button(window, text='Enviar', command=lambda: self.send_message(window)).pack(side='bottom', pady=5)
 
-    def send_message(self):
+    def send_message(self, window):
         target = self.target_entry.get()
         msg = self.msg_entry.get()
         if target and msg:
+            window.destroy()
+            request = http.request('GET', f'http://localhost:8161/console/jolokia/exec/org.apache.activemq.artemis:broker="0.0.0.0",component=addresses,address="{target}",subcomponent=queues,routing-type="anycast",queue="{target}"/browse()', headers=headers).json()
+            if request['status'] != 200:
+                self.message(f'cliente {target} não existe!')
+                return
             self.conn.send(target, msg, headers={'persistent': True, 'name': self.name})
 
     def message(self, msg):

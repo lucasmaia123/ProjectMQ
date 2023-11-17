@@ -146,8 +146,7 @@ class Main_menu(tk.Frame):
         self.pack(fill='x', expand=True)
         self.master = master
 
-        self.label = tk.Label(self, text='Gerenciador do broker')
-        self.label.pack(side='top', padx=10, pady=10)
+        tk.Label(self, text='Gerenciador do broker').pack(side='top', padx=10, pady=10)
 
         self.scrollBar = tk.Scrollbar(self, orient='vertical')
         self.scrollBar.pack(side='right', fill='y')
@@ -232,10 +231,13 @@ class Main_menu(tk.Frame):
             if type == 'queue':
                 q_json = json.dumps({"name": name, "address": name, "routing-type": "ANYCAST", "durable": True})
             elif type == 'topic':
+                if ' ' in name:
+                    self.popupWindow('Favor não utilizar espaços no nome!')
+                    return
                 q_json = json.dumps({"name": name, "address": name, "routing-type": "MULTICAST", "durable": True})
             response = http.request('GET', f'http://localhost:8161/console/jolokia/exec/org.apache.activemq.artemis:broker="0.0.0.0"/createQueue(java.lang.String)/{q_json}', headers=headers).json()
             if response['status'] == 200:
-                self.label.configure(text='Queue criada com êxito!')
+                self.popupWindow('Queue criada com êxito!')
                 sleep(0.01)
                 self.update()
             else:
